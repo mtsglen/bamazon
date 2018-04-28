@@ -27,7 +27,7 @@ function start() {
               {
                 name:"listItems",
                 type: "rawlist",
-                choices: () => results.map(item => item.product_name),
+                choices: () => results.map(item => `${item.product_name}..................$ ${item.price} `),
                 message: "Which item would you like to buy?  Please provide the ID number."
               },
               {
@@ -37,29 +37,42 @@ function start() {
               }
             ])
             .then(function(sale) {
-                const chosenItem = results.find(item => item.product_name === sale.choice);
-                if (chosenItem.purchase > parseInt(sale.stock_quantity)){
-                    console.log("Insufficient quantity!");
-                    
-                } else {
-                    const newQuantity = parseInt(sale.stock_quantity) - chosenItem.purchase
-                    connection.query(
-                        "UPDATE products SET ? WHERE ?",
-                        [
-                          {
-                            stock_quantity: newQuantity
-                          },
-                          {
-                            id: chosenItem.id
-                          }
-                        ],
-                        function(error) {
-                            if (error) throw error;
-                            console.log("Purchase Complete!");
-                            start();
+                let itemName = sale.listItems.substr(0, sale.listItems.indexOf("."));
+                let quantNumber;
+                //Query that can call the specific item chosen by customer
+                connection.query(
+                    "SELECT * FROM products WHERE ?", 
+                    [
+                    {
+                        product_name: itemName
+                    }
+                    ], function(error, selectedRow) {
+                        if (err) throw err;
+                        quantNumber = selectedRow[0].stock_quantity;
+                        let itemPrice = selectedRow[0].price;
+                        if (parseInt(sale.purchase) > parseInt(quantNumber)) {
+                            console.log('Insufficient quantity!  There are only ' +  quantNumber + ' in stock.');
+                        } else {
+                            let newQuantity = (parseInt(quantNumber) - parseInt(sale.purchase));
+                            let total = sale.purchase * itemPrice
+                            let query = connection.query(
+                                "UPDATE products SET ? WHERE ?",
+                                [
+                                {
+                                    stock_quantity: newQuantity
+                                },
+                                {
+                                    product_name: itemName
+                                }
+                                ], function(err, newProductData){
+                                    if (err) throw err;
+                                    // console.log(newProductData);
+                                    
+                                })
+                            console.log("Your total purchase is $", total);
+                            connection.end();
                         }
-                    )
-                }
-            })
-    });
-};
+                    });
+            });
+        });
+}
