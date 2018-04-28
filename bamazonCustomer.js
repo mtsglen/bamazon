@@ -52,6 +52,7 @@ function start() {
                         let itemPrice = selectedRow[0].price;
                         if (parseInt(sale.purchase) > parseInt(quantNumber)) {
                             console.log('Insufficient quantity!  There are only ' +  quantNumber + ' in stock.');
+                            connection.end();
                         } else {
                             let newQuantity = (parseInt(quantNumber) - parseInt(sale.purchase));
                             let total = sale.purchase * itemPrice
